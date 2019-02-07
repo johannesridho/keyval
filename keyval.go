@@ -2,30 +2,36 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
+	"github.com/johannesridho/keyval/config"
+	"github.com/johannesridho/keyval/redisprovider"
 	"log"
 	"net/http"
+	"os"
 )
 
 var redisClient *redis.Client
 
 type Payload struct {
-	Key   string
-	Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func main() {
-	redisClient = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0,
-	})
+	config.LoadEnv()
+
+	redisClient = redisprovider.GetClient()
+
+	host := os.Getenv("HOST")
+	port := os.Getenv("PORT")
+	address := fmt.Sprintf("%s:%s", host, port)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/keyvals", setKeyval).Methods("POST")
 	router.HandleFunc("/keyvals/{key}", getKeyVal).Methods("GET")
-	log.Fatal(http.ListenAndServe(":8000", router))
+	log.Fatal(http.ListenAndServe(address, router))
 }
 
 func setKeyval(responseWriter http.ResponseWriter, request *http.Request) {
