@@ -3,33 +3,29 @@ package redisprovider
 import (
 	"fmt"
 	"github.com/go-redis/redis"
-	"github.com/johannesridho/keyval/config"
 	"log"
-	"os"
 )
 
 var client *redis.Client
 
-func init() {
+func LoadClient(host string, port string, pass string) error {
 	log.Println("initiating Redis")
 
-	config.LoadEnv()
-
-	host := os.Getenv("REDIS_HOST")
-	port := os.Getenv("REDIS_PORT")
 	address := fmt.Sprintf("%s:%s", host, port)
 
 	client = redis.NewClient(&redis.Options{
 		Addr:     address,
-		Password: os.Getenv("REDIS_PASSWORD"),
+		Password: pass,
 	})
 
 	if _, err := client.Ping().Result(); err != nil {
 		log.Fatalf("error initiating Redis : %v", err)
-		return
+		return err
 	}
 
 	log.Println("Redis initiated")
+
+	return nil
 }
 
 func GetClient() *redis.Client {

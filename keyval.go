@@ -9,7 +9,6 @@ import (
 	"github.com/johannesridho/keyval/redisprovider"
 	"log"
 	"net/http"
-	"os"
 )
 
 var redisClient *redis.Client
@@ -22,15 +21,18 @@ type Payload struct {
 func main() {
 	config.LoadEnv()
 
+	err := redisprovider.LoadClient(config.RedisHost, config.RedisPort, config.RedisPassword)
+	if err != nil {
+		log.Fatalf("error initiating Redis : %v", err)
+	}
+
 	redisClient = redisprovider.GetClient()
 
-	host := os.Getenv("HOST")
-	port := os.Getenv("PORT")
-	address := fmt.Sprintf("%s:%s", host, port)
+	address := fmt.Sprintf("%s:%s", config.Host, config.Port)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/keyvals", setKeyval).Methods("POST")
-	router.HandleFunc("/keyvals/{key}", getKeyVal).Methods("GET")
+	router.HandleFunc("/keyvals/{key}", getKeyval).Methods("GET")
 	log.Fatal(http.ListenAndServe(address, router))
 }
 
@@ -53,7 +55,7 @@ func setKeyval(responseWriter http.ResponseWriter, request *http.Request) {
 	createJsonResponse(responseWriter, http.StatusOK, payload)
 }
 
-func getKeyVal(responseWriter http.ResponseWriter, request *http.Request) {
+func getKeyval(responseWriter http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 
 	key := vars["key"]
